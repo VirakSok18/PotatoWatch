@@ -31,6 +31,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://vidlink.pro" />
+        <link rel="preconnect" href="https://vidfast.pro" />
+        <link rel="preconnect" href="https://vidnest.fun" />
+      </head>
       <body
         suppressHydrationWarning
         className="min-h-screen bg-[#080b10] text-[#f4f7fb] selection:bg-[#38bdf8] selection:text-[#07131a]"
