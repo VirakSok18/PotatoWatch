@@ -31,7 +31,6 @@ interface WatchPlayerProps {
 export function WatchPlayer({
   mediaType,
   id,
-  imdbId = null,
   title,
   poster,
   season = 1,
@@ -42,20 +41,6 @@ export function WatchPlayer({
   anilistId = null,
 }: WatchPlayerProps) {
   const router = useRouter();
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-
-  const styledSubUrl =
-    imdbId && origin && !origin.includes("localhost") && !origin.includes("127.0.0.1")
-      ? `${origin}/api/subtitles?imdbId=${encodeURIComponent(
-          imdbId
-        )}&type=${mediaType}${
-          mediaType === "tv" ? `&season=${season}&episode=${episode}` : ""
-        }`
-      : null;
 
   const serverList = anilistId
     ? [
@@ -70,20 +55,14 @@ export function WatchPlayer({
           url: `https://vidnest.fun/anime/${anilistId}/${episode}/dub`,
         },
       ]
-    : EMBED_SERVERS.map((s) => {
-        let url =
+    : EMBED_SERVERS.map((s) => ({
+        id: s.id,
+        name: s.name,
+        url:
           mediaType === "movie"
             ? s.movieUrl(id)
-            : s.tvUrl(id, season, episode);
-        if (s.id === "vidlink" && styledSubUrl) {
-          url += `&sub_file=${encodeURIComponent(styledSubUrl)}&sub_label=Potato+EN`;
-        }
-        return {
-          id: s.id,
-          name: s.name,
-          url,
-        };
-      });
+            : s.tvUrl(id, season, episode),
+      }));
 
   const serverTabs = serverList.map((s) => ({ value: s.id, label: s.name }));
 
