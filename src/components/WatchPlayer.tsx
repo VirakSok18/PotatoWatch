@@ -163,7 +163,7 @@ export function WatchPlayer({
   }, [mediaType, id, season, nextEp, router]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#06080c] text-[#f4f7fb] sm:justify-center">
+    <div className="flex min-h-screen flex-col justify-center bg-[#06080c] text-[#f4f7fb]">
       <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6">
         {/* Centered theater header */}
         <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -279,15 +279,37 @@ export function WatchPlayer({
 
         {/* Dead-center Liquid Glass server bar */}
         <div className="mt-5 flex flex-col items-center gap-2">
-          <div className="no-scrollbar flex max-w-full overflow-x-auto py-2">
+          {/* Desktop: glisse Liquid Glass TabBar */}
+          <div className="hidden py-2 sm:block">
             <TabBar
               items={serverTabs}
               value={serverId}
               onValueChange={(val) => selectServer(val)}
               aria-label="Video servers"
-              className="max-sm:[&_button]:px-2 max-sm:[&_button]:text-xs"
             />
           </div>
+
+          {/* Phone: compact fit-to-screen glass pill bar */}
+          <div className="flex w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/[0.04] p-1 backdrop-blur-md sm:hidden">
+            {serverList.map((srv) => {
+              const isCurrent = srv.id === serverId;
+              return (
+                <button
+                  key={srv.id}
+                  type="button"
+                  onClick={() => selectServer(srv.id)}
+                  className={`flex h-8 flex-1 basis-[18%] items-center justify-center whitespace-nowrap rounded-xl px-2 text-[11px] font-medium transition-colors ${
+                    isCurrent
+                      ? "bg-white/15 text-white"
+                      : "text-[#9aa6bc] hover:text-white"
+                  }`}
+                >
+                  {srv.name}
+                </button>
+              );
+            })}
+          </div>
+
           <p className="text-center text-xs text-[#6f7a8f]">
             If subtitles are off, switch to another server
           </p>

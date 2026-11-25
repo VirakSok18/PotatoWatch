@@ -81,16 +81,38 @@ export function CategoryTabs({
     category === "movie" ? "movie" : category === "tv" ? "tv" : "all";
 
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div className="no-scrollbar flex max-w-full overflow-x-auto py-3">
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Desktop: glisse Liquid Glass TabBar */}
+      <div className="hidden py-3 sm:block">
         <TabBar
           items={ITEMS}
           value={active}
           onValueChange={(v) => setActive(v as WatchCategory)}
           link={Link}
           aria-label="Filter by category"
-          className="max-sm:[&_a]:px-2.5 max-sm:[&_a]:text-xs"
         />
+      </div>
+
+      {/* Phone: compact 5-column fit-to-screen glass pill bar */}
+      <div className="grid w-full grid-cols-5 gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur-md sm:hidden">
+        {ITEMS.map((item) => {
+          const isCurrent = item.value === active;
+          return (
+            <Link
+              key={item.value}
+              href={item.href}
+              prefetch={true}
+              onClick={() => setActive(item.value as WatchCategory)}
+              className={`flex h-8 items-center justify-center rounded-full px-1 text-[11px] font-medium transition-colors ${
+                isCurrent
+                  ? "bg-white/15 text-white"
+                  : "text-[#9aa6bc] hover:text-white"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="flex items-center gap-2">
