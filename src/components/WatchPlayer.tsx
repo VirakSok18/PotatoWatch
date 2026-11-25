@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Shield } from "lucide-react";
 import { TabBar } from "glisse";
 import { useEffect, useState } from "react";
 import { GlassSelect } from "@/components/GlassSelect";
@@ -67,6 +67,7 @@ export function WatchPlayer({
   const serverTabs = serverList.map((s) => ({ value: s.id, label: s.name }));
 
   const [serverId, setServerId] = useState(serverList[0].id);
+  const [blockPopups, setBlockPopups] = useState(true);
   const [forcePlay, setForcePlay] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [watchedEps, setWatchedEps] = useState<number[]>([]);
@@ -266,9 +267,14 @@ export function WatchPlayer({
             </div>
           ) : (
             <iframe
-              key={embedUrl}
+              key={`${embedUrl}-${blockPopups ? "sb" : "nsb"}`}
               src={embedUrl}
               title={title}
+              sandbox={
+                blockPopups
+                  ? "allow-scripts allow-same-origin allow-forms allow-presentation"
+                  : undefined
+              }
               allowFullScreen
               allow="autoplay; fullscreen *; picture-in-picture; encrypted-media"
               referrerPolicy="origin"
@@ -310,9 +316,23 @@ export function WatchPlayer({
             })}
           </div>
 
-          <p className="text-center text-xs text-[#6f7a8f]">
-            If subtitles are off, switch to another server
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <p className="text-center text-xs text-[#6f7a8f]">
+              If subtitles are off, switch to another server
+            </p>
+            <button
+              type="button"
+              onClick={() => setBlockPopups((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                blockPopups
+                  ? "border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
+                  : "border-white/10 bg-white/[0.04] text-[#8f9bb0]"
+              }`}
+            >
+              <Shield className="h-3 w-3" />
+              <span>{blockPopups ? "Pop-up block: On" : "Pop-up block: Off"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Episode quick grid + season picker for TV / K-Drama / Anime */}
