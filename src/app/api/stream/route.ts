@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ANIME, MOVIES } from "@consumet/extensions";
 
-function getConsumetBase(): string | null {
-  const raw = process.env.CONSUMET_API_URL?.trim();
-  return raw ? raw.replace(/\/+$/, "") : null;
-}
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
-  const base = getConsumetBase();
-  if (!base) {
-    return NextResponse.json(
-      { available: false, error: "CONSUMET_API_URL not configured" },
-      { status: 200 }
-    );
-  }
-
   const sp = request.nextUrl.searchParams;
   const title = sp.get("title")?.trim() || "";
   const type = sp.get("type") === "tv" ? "tv" : "movie";
@@ -27,51 +17,23 @@ export async function GET(request: NextRequest) {
 
   try {
     if (isAnime) {
-      // Search HiAnime / Zoro via Consumet
-      const searchRes = await fetch(
-        `${base}/anime/hianime/${encodeURIComponent(title)}`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (!searchRes.ok) {
-        return NextResponse.json({ available: false, error: "Anime search failed" });
-      }
-      const searchData = (await searchRes.json()) as {
-        results?: { id: string; title: string }[];
-      };
-      const match = searchData.results?.[0];
-      if (!match) {
+      const provider = new ANIME.Hianime();
+      const search = await provider.search(title);
+      const match = search.results?.[0];
+      if (!match?.id) {
         return NextResponse.json({ available: false, error: "Anime not found" });
       }
 
-      const infoRes = await fetch(
-        `${base}/anime/hianime/info?id=${encodeURIComponent(match.id)}`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (!infoRes.ok) {
-        return NextResponse.json({ available: false, error: "Anime info failed" });
-      }
-      const info = (await infoRes.json()) as {
-        episodes?: { id: string; number: number }[];
-      };
+      const info = await provider.fetchAnimeInfo(match.id);
       const ep =
         info.episodes?.find((e) => e.number === episode) || info.episodes?.[0];
-      if (!ep) {
+      if (!ep?.id) {
         return NextResponse.json({ available: false, error: "Episode not found" });
       }
 
-      const watchRes = await fetch(
-        `${base}/anime/hianime/watch/${encodeURIComponent(ep.id)}`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (!watchRes.ok) {
-        return NextResponse.json({ available: false, error: "Stream fetch failed" });
-      }
-      const watchData = (await watchRes.json()) as {
-        sources?: { url: string; quality?: string; isM3U8?: boolean }[];
-        subtitles?: { url: string; lang: string }[];
-      };
+      const watch = await provider.fetchEpisodeSources(ep.id);
       const source =
-        watchData.sources?.find((s) => s.isM3U8) || watchData.sources?.[0];
+        watch.sources?.find((s) => s.isM3U8) || watch.sources?.[0];
       if (!source?.url) {
         return NextResponse.json({ available: false, error: "No stream URL" });
       }
@@ -79,43 +41,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         available: true,
         streamUrl: source.url,
-        subtitles: watchData.subtitles || [],
+        subtitles: (watch.subtitles || []).map((s) => ({
+          url: s.url,
+          lang: s.lang || "English",
+        })),
       });
     }
 
-    // Movies & TV via FlixHQ on Consumet
-    const searchRes = await fetch(
-      `${base}/movies/flixhq/${encodeURIComponent(title)}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!searchRes.ok) {
-      return NextResponse.json({ available: false, error: "Media search failed" });
-    }
-    const searchData = (await searchRes.json()) as {
-      results?: { id: string; type?: string }[];
-    };
+    const provider = new MOVIES.FlixHQ();
+    const search = await provider.search(title);
     const match =
-      searchData.results?.find((r) =>
+      search.results?.find((r) =>
         type === "movie"
-          ? r.type?.toLowerCase().includes("movie")
-          : r.type?.toLowerCase().includes("tv")
-      ) || searchData.results?.[0];
+          ? String(r.type || "").toLowerCase().includes("movie")
+          : String(r.type || "").toLowerCase().includes("tv")
+      ) || search.results?.[0];
 
-    if (!match) {
+    if (!match?.id) {
       return NextResponse.json({ available: false, error: "Title not found" });
     }
 
-    const infoRes = await fetch(
-      `${base}/movies/flixhq/info?id=${encodeURIComponent(match.id)}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!infoRes.ok) {
-      return NextResponse.json({ available: false, error: "Media info failed" });
-    }
-    const info = (await infoRes.json()) as {
-      episodes?: { id: string; number?: number; season?: number }[];
-    };
-
+    const info = await provider.fetchMediaInfo(match.id);
     const ep =
       type === "movie"
         ? info.episodes?.[0]
@@ -123,25 +69,13 @@ export async function GET(request: NextRequest) {
             (e) => e.season === season && e.number === episode
           ) || info.episodes?.[0];
 
-    if (!ep) {
+    if (!ep?.id) {
       return NextResponse.json({ available: false, error: "Episode not found" });
     }
 
-    const watchRes = await fetch(
-      `${base}/movies/flixhq/watch?episodeId=${encodeURIComponent(
-        ep.id
-      )}&mediaId=${encodeURIComponent(match.id)}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!watchRes.ok) {
-      return NextResponse.json({ available: false, error: "Stream fetch failed" });
-    }
-    const watchData = (await watchRes.json()) as {
-      sources?: { url: string; quality?: string; isM3U8?: boolean }[];
-      subtitles?: { url: string; lang: string }[];
-    };
+    const watch = await provider.fetchEpisodeSources(ep.id, match.id);
     const source =
-      watchData.sources?.find((s) => s.isM3U8) || watchData.sources?.[0];
+      watch.sources?.find((s) => s.isM3U8) || watch.sources?.[0];
     if (!source?.url) {
       return NextResponse.json({ available: false, error: "No stream URL" });
     }
@@ -149,7 +83,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       available: true,
       streamUrl: source.url,
-      subtitles: watchData.subtitles || [],
+      subtitles: (watch.subtitles || []).map((s) => ({
+        url: s.url,
+        lang: s.lang || "English",
+      })),
     });
   } catch {
     return NextResponse.json({ available: false, error: "Stream lookup failed" });
