@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { TabBar } from "glisse";
 import { useEffect, useState } from "react";
-import { CustomHlsPlayer } from "@/components/CustomHlsPlayer";
 import { GlassSelect } from "@/components/GlassSelect";
 import { EMBED_SERVERS } from "@/lib/servers";
 import {
@@ -42,45 +41,8 @@ export function WatchPlayer({
   anilistId = null,
 }: WatchPlayerProps) {
   const router = useRouter();
-  const [directStream, setDirectStream] = useState<{
-    streamUrl: string;
-    subtitles: { url: string; lang: string }[];
-  } | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setDirectStream(null);
-    const params = new URLSearchParams({
-      title,
-      type: mediaType,
-      anime: anilistId ? "1" : "0",
-      season: String(season),
-      episode: String(episode),
-    });
-    fetch(`/api/stream?${params.toString()}`)
-      .then((r) => (r.ok ? r.json() : { available: false }))
-      .then(
-        (data: {
-          available?: boolean;
-          streamUrl?: string;
-          subtitles?: { url: string; lang: string }[];
-        }) => {
-          if (!cancelled && data.available && data.streamUrl) {
-            setDirectStream({
-              streamUrl: data.streamUrl,
-              subtitles: data.subtitles || [],
-            });
-            setServerId("ad-free");
-          }
-        }
-      )
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [title, mediaType, anilistId, season, episode]);
-
-  const baseServerList = anilistId
+  const serverList = anilistId
     ? [
         {
           id: "anime-sub",
@@ -101,10 +63,6 @@ export function WatchPlayer({
             ? s.movieUrl(id)
             : s.tvUrl(id, season, episode),
       }));
-
-  const serverList = directStream
-    ? [{ id: "ad-free", name: "Ad-Free", url: directStream.streamUrl }, ...baseServerList]
-    : baseServerList;
 
   const serverTabs = serverList.map((s) => ({ value: s.id, label: s.name }));
 
@@ -306,11 +264,6 @@ export function WatchPlayer({
                 Try player anyway
               </button>
             </div>
-          ) : serverId === "ad-free" && directStream ? (
-            <CustomHlsPlayer
-              streamUrl={directStream.streamUrl}
-              subtitles={directStream.subtitles}
-            />
           ) : (
             <iframe
               key={embedUrl}
