@@ -82,13 +82,14 @@ export function CategoryTabs({
 
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div className="no-scrollbar flex overflow-x-auto py-3">
+      <div className="no-scrollbar flex max-w-full overflow-x-auto py-3">
         <TabBar
           items={ITEMS}
           value={active}
           onValueChange={(v) => setActive(v as WatchCategory)}
           link={Link}
           aria-label="Filter by category"
+          className="max-sm:[&_a]:px-2.5 max-sm:[&_a]:text-xs"
         />
       </div>
 
