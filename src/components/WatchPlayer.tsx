@@ -163,7 +163,7 @@ export function WatchPlayer({
   }, [mediaType, id, season, nextEp, router]);
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-[#06080c] text-[#f4f7fb]">
+    <div className="flex min-h-screen flex-col bg-[#06080c] text-[#f4f7fb] sm:justify-center">
       <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6">
         {/* Centered theater header */}
         <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -285,6 +285,7 @@ export function WatchPlayer({
               value={serverId}
               onValueChange={(val) => selectServer(val)}
               aria-label="Video servers"
+              className="max-sm:[&_button]:px-2 max-sm:[&_button]:text-xs"
             />
           </div>
           <p className="text-center text-xs text-[#6f7a8f]">
