@@ -66,11 +66,11 @@ export function GlassSelect({
 
       {open && (
         <div
-          className={`absolute top-full z-50 mt-2 min-w-[200px] ${
+          className={`absolute top-full z-50 mt-2 w-[min(82vw,250px)] ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >
-          <Glass className="max-h-72 w-full overflow-y-auto rounded-2xl p-1.5 shadow-2xl">
+          <Glass className="max-h-64 w-full overflow-y-auto rounded-2xl p-1.5 shadow-2xl">
             <div className="flex w-full flex-col gap-0.5">
               {options.map((opt) => {
                 const active = opt.value === value;
